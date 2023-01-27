@@ -27,6 +27,8 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequiredLength = 4;
 });
 
+builder.Services.AddCors();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -35,6 +37,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors(builder =>
+builder.WithOrigins("http://localhost:4200")
+.AllowAnyHeader()
+.AllowAnyMethod());
 
 app.UseAuthentication();
 
