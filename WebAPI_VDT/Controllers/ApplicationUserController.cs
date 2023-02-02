@@ -31,6 +31,7 @@ namespace WebAPI_VDT.Controllers
         // POST : api/AplicationUser/Register
         public async Task<Object> PostApplicationUser(ApplicationUserModel model)
         {
+            model.Role = "User";
             var applicationUser = new ApplicationUser()
             {
                 UserName = model.UserName,
@@ -40,6 +41,7 @@ namespace WebAPI_VDT.Controllers
             try
             {
                 var result = await _userManager.CreateAsync(applicationUser, model.Password);
+                await _userManager.AddToRoleAsync(applicationUser, model.Role);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -56,20 +58,27 @@ namespace WebAPI_VDT.Controllers
             var user = await _userManager.FindByNameAsync(model.UserName);
             if(user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
+
+                //Get the role assigned to the user
+
+                var role = await _userManager.GetRolesAsync(user);
+                IdentityOptions _options = new IdentityOptions();
+
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(new Claim[]
                     {
-                        new Claim("UserID",user.Id.ToString())
+                        new Claim("UserID",user.Id.ToString()),
+                        new Claim(_options.ClaimsIdentity.RoleClaimType,role.FirstOrDefault())
                     }),
-                    Expires= DateTime.UtcNow.AddMinutes(5),
+                    Expires= DateTime.UtcNow.AddDays(1),
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appSettings.JWT_Secret)), SecurityAlgorithms.HmacSha256Signature)
                 };
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var securityToken = tokenHandler.CreateToken(tokenDescriptor);
                 var token = tokenHandler.WriteToken(securityToken);
 
-                return Ok(new { token });
+                return Ok(new { token, role });
             }
             else
             {
