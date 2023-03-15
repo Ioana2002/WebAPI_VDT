@@ -11,5 +11,7 @@ namespace WebAPI_VDT.Context
             
         }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+        public DbSet<Profile> Profile { get; set; }
+
     }
 }
