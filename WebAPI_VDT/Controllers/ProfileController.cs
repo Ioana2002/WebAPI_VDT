@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using WebAPI_VDT.Context;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Exchange.WebServices.Data;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace WebAPI_VDT.Controllers
 {
@@ -179,6 +180,64 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "UploadProfile", message = ex.Message });
             }
         }
+        [HttpPost]
+        [Authorize]
+        [Route("UpdateProfilePicture")]
+        public async Task<IActionResult> UpdateProfilePicture(ProfilePicture profilePictureData)
+        {
+            try
+            {
+                Guid userId = new Guid(User.Claims.First(c => c.Type == "UserID").Value);
+                ProfilePicture dbProfilePicture = _context.ProfilePicture.FirstOrDefault(x => x.UserId == userId.ToString());
+                if (dbProfilePicture == null)
+                {
+                    profilePictureData.ProfilePictureId = Guid.NewGuid().ToString();
+                    profilePictureData.UserId = userId.ToString();
+                    _context.ProfilePicture.Add(profilePictureData);
+                }
+                else
+                {
+                    profilePictureData.UserId = dbProfilePicture.UserId;
+                    profilePictureData.ProfilePictureId = dbProfilePicture.ProfilePictureId;
+
+                    _context.Entry(dbProfilePicture).CurrentValues.SetValues(profilePictureData);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { picture_url = profilePictureData.Picture_URL });
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "ProfileController", method = "UpdateProfilePicture", message = ex.Message });
+            }
+        }
+        [HttpGet]
+        [Authorize]
+        [Route("GetProfilePicture")]
+        public object GetProfilePicture()
+        {
+            try
+            {
+                Guid userId = new Guid(User.Claims.First(c => c.Type == "UserID").Value);
+                ProfilePicture profilePicture = _context.ProfilePicture.FirstOrDefault(x => x.UserId == userId.ToString());
+                if (profilePicture != null)
+                {
+                    return Ok(new { picture_url = profilePicture.Picture_URL });
+                }
+                else
+                {
+                    return Ok();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "ProfileController", method = "GetProfilePicture", message = ex.Message });
+            }
+        }
+
+
 
 
     }
