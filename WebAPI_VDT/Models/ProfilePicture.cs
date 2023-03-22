@@ -8,6 +8,7 @@ namespace WebAPI_VDT.Models
     {
         [Key]
         public string ProfilePictureId { get; set; }
+        [ForeignKey("UserId")]
         [Column(TypeName = "nvarchar(450)")]
         public string UserId { get; set; }
         [Column(TypeName = "nvarchar(MAX)")]

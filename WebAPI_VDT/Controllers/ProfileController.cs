@@ -41,13 +41,11 @@ namespace WebAPI_VDT.Controllers
 
                 if (profile != null)
                 {
-                    profile.ProfileId = null;
-                    profile.UserId = null;
                     return Ok(new { profile });
                 }
                 else
                 {
-                    return Ok();
+                    return NotFound();
                 }
 
             }
@@ -188,24 +186,30 @@ namespace WebAPI_VDT.Controllers
         [HttpPost]
         [Authorize]
         [Route("UpdateProfilePicture")]
-        public async Task<IActionResult> UpdateProfilePicture(ProfilePicture profilePictureData)
+        public async Task<IActionResult> UpdateProfilePicture([FromBody]UploadProfilePicturePattern profilePictureData)
         {
             try
             {
                 Guid userId = new Guid(User.Claims.First(c => c.Type == "UserID").Value);
-                ProfilePicture dbProfilePicture = _context.ProfilePicture.FirstOrDefault(x => x.UserId == userId.ToString());
+                ProfilePicture? dbProfilePicture = _context.ProfilePicture.FirstOrDefault(x => x.UserId == userId.ToString());
                 if (dbProfilePicture == null)
                 {
-                    profilePictureData.ProfilePictureId = Guid.NewGuid().ToString();
-                    profilePictureData.UserId = userId.ToString();
-                    _context.ProfilePicture.Add(profilePictureData);
+                    ProfilePicture cProfilePicture = new ProfilePicture();
+
+                    cProfilePicture.ProfilePictureId = Guid.NewGuid().ToString();
+                    cProfilePicture.UserId = userId.ToString();
+                    cProfilePicture.Picture_URL = profilePictureData.Picture_URL;
+                    _context.ProfilePicture.Add(cProfilePicture);
                 }
                 else
                 {
-                    profilePictureData.UserId = dbProfilePicture.UserId;
-                    profilePictureData.ProfilePictureId = dbProfilePicture.ProfilePictureId;
+                    ProfilePicture cProfilePicture = new ProfilePicture();
 
-                    _context.Entry(dbProfilePicture).CurrentValues.SetValues(profilePictureData);
+                    cProfilePicture.ProfilePictureId = dbProfilePicture.ProfilePictureId;
+                    cProfilePicture.UserId = dbProfilePicture.UserId;
+                    cProfilePicture.Picture_URL = profilePictureData.Picture_URL;
+
+                    _context.Entry(dbProfilePicture).CurrentValues.SetValues(cProfilePicture);
                 }
 
                 await _context.SaveChangesAsync();
@@ -241,6 +245,11 @@ namespace WebAPI_VDT.Controllers
             {
                 return BadRequest(new { controller = "ProfileController", method = "GetProfilePicture", message = ex.Message });
             }
+        }
+
+        public class UploadProfilePicturePattern
+        {
+            public string Picture_URL { get; set; }
         }
 
     }
