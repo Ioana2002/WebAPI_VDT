@@ -22,7 +22,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ApplicationContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
 builder.Services.AddDefaultIdentity<ApplicationUser>()
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationContext>();
+    .AddEntityFrameworkStores<ApplicationContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
                     opt.TokenLifespan = TimeSpan.FromHours(2));
@@ -74,7 +75,6 @@ builder.AllowAnyOrigin()
 .AllowAnyMethod());
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();

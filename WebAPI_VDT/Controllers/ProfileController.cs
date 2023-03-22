@@ -56,6 +56,7 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "GetUserProfile", message = ex.Message });
             }
         }
+
         [HttpGet]
         [Authorize]
         [Route("GetProfiles")]
@@ -85,6 +86,7 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "GetProfiles", message = ex.Message });
             }
         }
+
         [HttpGet]
         [Authorize]
         [Route("GetUserProfileById/{id}")]
@@ -112,6 +114,7 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "GetUserProfile", message = ex.Message });
             }
         }
+
         [HttpGet]
         [Authorize]
         [Route("GetAccountInfo")]
@@ -132,10 +135,11 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "GetAccountInfo", message = ex.Message });
             }
         }
+
         [HttpPost]
         [Authorize]
         [Route("UploadProfile")]
-        public async Task<IActionResult> UploadProfile(Profile profile)
+        public async Task<IActionResult> UploadProfile([FromBody]Profile profile)
         {
             try
             {
@@ -180,6 +184,7 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "UploadProfile", message = ex.Message });
             }
         }
+
         [HttpPost]
         [Authorize]
         [Route("UpdateProfilePicture")]
@@ -213,6 +218,7 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "UpdateProfilePicture", message = ex.Message });
             }
         }
+
         [HttpGet]
         [Authorize]
         [Route("GetProfilePicture")]
@@ -236,9 +242,6 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "ProfileController", method = "GetProfilePicture", message = ex.Message });
             }
         }
-
-
-
 
     }
 }

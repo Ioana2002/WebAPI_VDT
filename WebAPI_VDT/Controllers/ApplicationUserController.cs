@@ -85,5 +85,51 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new {message = "Username or password is incorrect!"});
             }
         }
+
+        [HttpPost]
+        [Route("ChangePassword")]
+        public async Task<Object> ChangePassword(ApplicationUserModel model)
+        {
+            try
+            {
+                string userId = new Guid(User.Claims.First(c => c.Type == "UserID").Value).ToString();
+                ApplicationUser user = await _userManager.FindByIdAsync(userId.ToString());
+                if (user == null)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    if (model.UserName != user.UserName)
+                    {
+                        user.UserName = model.UserName;
+                        user.NormalizedUserName = model.UserName.ToUpper();
+                    }
+                    if (model.Email != user.Email)
+                    {
+                        user.Email = model.Email;
+                        user.NormalizedEmail = model.Email.ToUpper();
+                    }
+
+                    var updateResult = await _userManager.UpdateAsync(user);
+
+                    if (!updateResult.Succeeded)
+                    {
+                        return BadRequest(new { message = "This username is taken." });
+                    }
+                    if (!String.IsNullOrEmpty(model.Password))
+                    {
+                        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                        await _userManager.ResetPasswordAsync(user, token, model.Password);
+                    }
+                }
+
+                return Ok(new { username = user.UserName, email = user.Email });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "ApplicationUserController", method = "ChangePassword", message = ex.Message });
+            }
+        }
     }
 }

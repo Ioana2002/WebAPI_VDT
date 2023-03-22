@@ -39,8 +39,7 @@ namespace WebAPI_VDT.Models
         public string Serie_CI { get; set; }
         [Column(TypeName = "int")]
         public int? Numar_CI { get; set; }
-        [Column(TypeName = "varchar(2000)")]
-        public string DespreMine { get; set; }
+        
 
     }
 }
