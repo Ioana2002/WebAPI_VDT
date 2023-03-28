@@ -37,7 +37,8 @@ namespace WebAPI_VDT.Controllers
             try
             {
                 Guid UserId = new Guid(User.Claims.First(c => c.Type == "UserID").Value);
-                Profile profile = _context.Profile.FirstOrDefault(x => x.UserId == UserId.ToString());
+                string userIdConverted = UserId.ToString();
+                Profile profile = _context.Profile.FirstOrDefault(x => x.UserId == userIdConverted);
 
                 if (profile != null)
                 {
@@ -45,7 +46,7 @@ namespace WebAPI_VDT.Controllers
                 }
                 else
                 {
-                    return NotFound();
+                    return Ok(new { });
                 }
 
             }
