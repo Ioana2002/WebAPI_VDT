@@ -46,7 +46,7 @@ namespace WebAPI_VDT.Controllers
                 }
                 else
                 {
-                    return Ok(new { });
+                    return Ok();
                 }
 
             }
