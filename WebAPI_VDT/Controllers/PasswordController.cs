@@ -8,6 +8,8 @@ using WebAPI_VDT.Models;
 
 namespace WebAPI_VDT.Controllers
 {
+    [Route("[controller]")]
+    [ApiController]
     public class PasswordController : Controller
     {
         private UserManager<ApplicationUser> _userManager;

@@ -13,6 +13,8 @@ namespace WebAPI_VDT.Context
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public DbSet<Profile> Profile { get; set; }
         public DbSet<ProfilePicture> ProfilePicture { get; set; }
+        public DbSet<Event> Event { get; set; }
+        public DbSet<Participation> Participation { get; set; }
 
     }
 }
