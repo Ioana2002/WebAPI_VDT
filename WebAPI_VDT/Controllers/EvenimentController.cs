@@ -96,7 +96,7 @@ namespace WebAPI_VDT.Controllers
                         tripEvent.Judet = eveniment.Judet;
                         tripEvent.Locatia = eveniment.Locatia;
                         tripEvent.Poster = eveniment.Poster;
-                        tripEvent.EvenimentId = eveniment.EvenimentId;
+                        tripEvent.EvenimentId = Guid.NewGuid();
 
                         _context.Event.Add(tripEvent);
                     }
@@ -112,7 +112,7 @@ namespace WebAPI_VDT.Controllers
                         socialEvent.Judet = eveniment.Judet;
                         socialEvent.Locatia = eveniment.Locatia;
                         socialEvent.Poster = eveniment.Poster;
-                        socialEvent.EvenimentId = eveniment.EvenimentId;
+                        socialEvent.EvenimentId = Guid.NewGuid(); ;
 
                         _context.Event.Add(socialEvent);
                     }
@@ -128,11 +128,11 @@ namespace WebAPI_VDT.Controllers
                         activityEvent.Judet = eveniment.Judet;
                         activityEvent.Locatia = eveniment.Locatia;
                         activityEvent.Poster = eveniment.Poster;
-                        activityEvent.EvenimentId = eveniment.EvenimentId;
+                        activityEvent.EvenimentId = Guid.NewGuid();
 
                         _context.Event.Add(activityEvent);
                     }
-                    eveniment.EvenimentId = eveniment.EvenimentId;
+                    eveniment.EvenimentId = Guid.NewGuid();
                     eveniment.Data_Inceput = eveniment.Data_Inceput.ToLocalTime();
                     eveniment.Data_Sfarsit = eveniment.Data_Sfarsit.ToLocalTime();
                     _context.Event.Add(eveniment);
@@ -258,5 +258,142 @@ namespace WebAPI_VDT.Controllers
                 return BadRequest(new { controller = "EvenimentController", method = "GetParticipants", message = ex.Message });
             }
         }
+
+        [HttpPost]
+        [Route("AddRegister")]
+        public async Task<Object> AddParticipare(Participation register)
+        {
+            try
+            {
+                string userId = new Guid(User.Claims.First(c => c.Type == "UserID").Value).ToString();
+                bool registeredBefore = _context.Participation.Any(x => (x.ParticipantGuid == register.ParticipantGuid) && x.EvenimentGuid == register.EvenimentGuid);
+                if (registeredBefore == false)
+                {
+                    var participant = _context.Profile.FirstOrDefault(x => x.ProfileId == register.ParticipantGuid.ToString());
+                    var eveniment = _context.Event.FirstOrDefault(x => x.EvenimentId == register.EvenimentGuid);
+
+                    if (participant == null)
+                    {
+                        return BadRequest("User-ul selectat nu se afla in sistem.");
+                    }
+                    var accountParticipant = _context.Users.FirstOrDefault(x => x.Id == participant.UserId.ToString());
+
+                    if (userId != accountParticipant.Id)
+                    {
+                        return BadRequest("Nu puteti inscrie alti participanti.");
+                    }
+
+                    if (participant == null)
+                    {
+                        return BadRequest("Participantul trebuie sa isi completeze datele pentru a va putea inscrie.");
+                    }
+
+                    register.Telefon = participant.Telefon;
+                    register.Email = accountParticipant.Email;
+                    register.ParticipantNume = participant.Nume + " " + participant.Prenume;
+                    register.DataInscriere = DateTime.Now;
+                    register.Status = "Inscris";
+                    register.ParticipareId = Guid.NewGuid();
+                    _context.Participation.Add(register);
+
+                    if (eveniment.TipEveniment == "Excursie")
+                    {
+                        var tripRegister = new Participation();
+                        // tripRegister.EvenimentId = eveniment.Trial_GUID;
+                        tripRegister.ParticipantGuid = register.ParticipantGuid;
+                        tripRegister.Telefon = register.Telefon;
+                        tripRegister.Email = register.Email;
+                        tripRegister.ParticipantNume = register.ParticipantNume;
+                        tripRegister.DataInscriere = register.DataInscriere;
+                        tripRegister.Status = register.Status;
+                        tripRegister.ParticipareId = Guid.NewGuid();
+
+                        _context.Participation.Add(tripRegister);
+                    }else if(eveniment.TipEveniment == "Caz Social")
+                    {
+                        var socialRegister = new Participation();
+                        // tripRegister.EvenimentId = eveniment.Trial_GUID;
+                        socialRegister.ParticipantGuid = register.ParticipantGuid;
+                        socialRegister.Telefon = register.Telefon;
+                        socialRegister.Email = register.Email;
+                        socialRegister.ParticipantNume = register.ParticipantNume;
+                        socialRegister.DataInscriere = register.DataInscriere;
+                        socialRegister.Status = register.Status;
+                        socialRegister.ParticipareId = Guid.NewGuid();
+                    }
+                    else if (eveniment.TipEveniment == "Activitate")
+                    {
+                        var activityRegister = new Participation();
+                        // tripRegister.EvenimentId = eveniment.Trial_GUID;
+                        activityRegister.ParticipantGuid = register.ParticipantGuid;
+                        activityRegister.Telefon = register.Telefon;
+                        activityRegister.Email = register.Email;
+                        activityRegister.ParticipantNume = register.ParticipantNume;
+                        activityRegister.DataInscriere = register.DataInscriere;
+                        activityRegister.Status = register.Status;
+                        activityRegister.ParticipareId = Guid.NewGuid();
+                    }
+                }
+                else
+                {
+                    return BadRequest("Participantul este deja inscris la eveniment.");
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { succeeded = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "EvenimentController", method = "AddRegister", message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        [Route("GetEventParticipants/{id}")]
+        public object GetEventParticipants(string id)
+        {
+            try
+            {
+                var registers = _context.Participation.Where(x => x.EvenimentGuid == new Guid(id))
+                                                    .Select(a => a)
+                                                    .OrderBy(a => a.Status)
+                                                    .ToList();
+                return (registers.Count == 0) ? null : Ok(registers);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "EvenimentController", method = "GetEventParticipants", message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        [Route("GetPozeParticipanti/{participareId}")]
+        public object GetPozeParticipanti(string participareId)
+        {
+            try
+            {
+                Guid GuidParticipare = new Guid(participareId);
+                var participare = _context.Participation.FirstOrDefault(x => x.ParticipareId == GuidParticipare);
+
+                if (participare != null)
+                {
+                    var participant = _context.Profile.FirstOrDefault(x => x.ProfileId == participare.ParticipantGuid.ToString());
+
+                    return Ok(new
+                    {
+                        poza_CI_Participant = participant.Poza_CI
+                    });
+                }
+                else
+                {
+                    return BadRequest("Nu am putut identifica participarea.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "UtileController", method = "GetPozeParticipanti", message = ex.Message });
+            }
+        }
+
     }
 }

@@ -11,7 +11,7 @@ namespace WebAPI_VDT.Models
         [Column(TypeName = "uniqueidentifier")]
         public Guid? EvenimentId { get; set; }
         [Column(TypeName = "nvarchar(450)")]
-        public int Denumire { get; set; }
+        public string Denumire { get; set; }
         [Column(TypeName = "datetime")]
         public DateTime Data_Inceput { get; set; }
         [Column(TypeName = "datetime")]
