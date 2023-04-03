@@ -119,7 +119,7 @@ namespace WebAPI_VDT.Controllers
                     else if (eveniment.TipEveniment == "Activitate")
                     {
                         var activityEvent = new Event();
-                        activityEvent.TipEveniment = "Caz social";
+                        activityEvent.TipEveniment = "Activitate";
                         activityEvent.Data_Inceput = eveniment.Data_Inceput.ToLocalTime();
                         activityEvent.Data_Sfarsit = eveniment.Data_Sfarsit.ToLocalTime();
                         activityEvent.Denumire = eveniment.Denumire;
