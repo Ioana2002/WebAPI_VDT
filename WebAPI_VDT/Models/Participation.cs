@@ -14,7 +14,7 @@ namespace WebAPI_VDT.Models
         [ForeignKey("EvenimentId")]
         [Column(TypeName = "int")]
         public int? EvenimentId { get; set; }
-        [ForeignKey("ParticipantGuid")]
+        [ForeignKey("ParticipantId")]
         [Column(TypeName = "int")]
         public int? ParticipantId { get; set; }
         [Column(TypeName = "uniqueidentifier")]
@@ -24,7 +24,7 @@ namespace WebAPI_VDT.Models
         [Column(TypeName = "nvarchar(150)")]
         public string ParticipantNume { get; set; }
         [Column(TypeName = "nvarchar(150)")]
-        public string TipTaxa { get; set; }
+        public string Taxa { get; set; }
         [Column(TypeName = "datetime")]
         public DateTime DataInscriere { get; set; }
         [Column(TypeName = "nvarchar(50)")]

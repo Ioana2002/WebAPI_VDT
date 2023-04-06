@@ -271,66 +271,55 @@ namespace WebAPI_VDT.Controllers
                 {
                     var participant = _context.Profile.FirstOrDefault(x => x.ProfileId == register.ParticipantGuid.ToString());
                     var eveniment = _context.Event.FirstOrDefault(x => x.EvenimentId == register.EvenimentGuid);
-
-                    if (participant == null)
-                    {
-                        return BadRequest("User-ul selectat nu se afla in sistem.");
-                    }
                     var accountParticipant = _context.Users.FirstOrDefault(x => x.Id == participant.UserId.ToString());
-
-                    if (userId != accountParticipant.Id)
-                    {
-                        return BadRequest("Nu puteti inscrie alti participanti.");
-                    }
-
-                    if (participant == null)
-                    {
-                        return BadRequest("Participantul trebuie sa isi completeze datele pentru a va putea inscrie.");
-                    }
 
                     register.Telefon = participant.Telefon;
                     register.Email = accountParticipant.Email;
                     register.ParticipantNume = participant.Nume + " " + participant.Prenume;
                     register.DataInscriere = DateTime.Now;
                     register.Status = "Inscris";
+                    register.Taxa = "Neachitata";
                     register.ParticipareId = Guid.NewGuid();
                     _context.Participation.Add(register);
 
                     if (eveniment.TipEveniment == "Excursie")
                     {
                         var tripRegister = new Participation();
-                        // tripRegister.EvenimentId = eveniment.Trial_GUID;
+                        tripRegister.EvenimentGuid = eveniment.EvenimentId;
                         tripRegister.ParticipantGuid = register.ParticipantGuid;
                         tripRegister.Telefon = register.Telefon;
                         tripRegister.Email = register.Email;
                         tripRegister.ParticipantNume = register.ParticipantNume;
                         tripRegister.DataInscriere = register.DataInscriere;
                         tripRegister.Status = register.Status;
+                        tripRegister.Taxa = register.Taxa;
                         tripRegister.ParticipareId = Guid.NewGuid();
 
                         _context.Participation.Add(tripRegister);
                     }else if(eveniment.TipEveniment == "Caz Social")
                     {
                         var socialRegister = new Participation();
-                        // tripRegister.EvenimentId = eveniment.Trial_GUID;
+                        socialRegister.EvenimentGuid = eveniment.EvenimentId;
                         socialRegister.ParticipantGuid = register.ParticipantGuid;
                         socialRegister.Telefon = register.Telefon;
                         socialRegister.Email = register.Email;
                         socialRegister.ParticipantNume = register.ParticipantNume;
                         socialRegister.DataInscriere = register.DataInscriere;
                         socialRegister.Status = register.Status;
+                        socialRegister.Taxa = register.Taxa;
                         socialRegister.ParticipareId = Guid.NewGuid();
                     }
                     else if (eveniment.TipEveniment == "Activitate")
                     {
                         var activityRegister = new Participation();
-                        // tripRegister.EvenimentId = eveniment.Trial_GUID;
+                        activityRegister.EvenimentGuid = eveniment.EvenimentId;
                         activityRegister.ParticipantGuid = register.ParticipantGuid;
                         activityRegister.Telefon = register.Telefon;
                         activityRegister.Email = register.Email;
                         activityRegister.ParticipantNume = register.ParticipantNume;
                         activityRegister.DataInscriere = register.DataInscriere;
                         activityRegister.Status = register.Status;
+                        activityRegister.Taxa = register.Taxa;
                         activityRegister.ParticipareId = Guid.NewGuid();
                     }
                 }
