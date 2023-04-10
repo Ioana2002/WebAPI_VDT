@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using System.Linq.Expressions;
 using WebAPI_VDT.Context;
 using WebAPI_VDT.Models;
 
@@ -239,19 +242,28 @@ namespace WebAPI_VDT.Controllers
         }
 
         [HttpGet]
-        [Route("GetParticipants")]
-        public object GetParticipants()
+        [Route("GetParticipants/{id}")]
+        public object GetParticipants(string id)
         {
             try
             {
-                var profiles = _context.Profile.Select(row => row).ToList();
-                List<Profile> result = new List<Profile>();
-
-                foreach (Profile profile in profiles)
+                var eveniment = _context.Participation.FirstOrDefault(x => x.EvenimentGuid == new Guid(id));
+                if (eveniment != null)
                 {
-                    result.Add(new Profile { Nume = profile.Nume, Prenume = profile.Prenume, ProfileId = profile.ProfileId });
+
+                    var participants = _context.Participation.Select(row => row).ToList();
+                    List<object> result = new List<object>();
+
+                    foreach (Participation participant in participants)
+                    {
+                        result.Add(new { Value = participant.ParticipantGuid, Nume = participant.ParticipantNume, Taxa = participant.Taxa, DataInscriere = participant.DataInscriere, Status = participant.Status, Telefon = participant.Telefon });
+                    }
+                    return Ok(result);
                 }
-                return Ok(result);
+                else
+                {
+                    return NotFound();
+                }
             }
             catch (Exception ex)
             {
@@ -261,66 +273,51 @@ namespace WebAPI_VDT.Controllers
 
         [HttpPost]
         [Route("AddRegister")]
-        public async Task<Object> AddParticipare(Participation register)
+        public async Task<Object> AddRegister(ParticipationRegisterPatter data)
         {
             try
             {
-                string userId = new Guid(User.Claims.First(c => c.Type == "UserID").Value).ToString();
-                bool registeredBefore = _context.Participation.Any(x => (x.ParticipantGuid == register.ParticipantGuid) && x.EvenimentGuid == register.EvenimentGuid);
+                Guid userId = new Guid(User.Claims.First(c => c.Type == "UserID").Value);
+                Guid eventGUID = new Guid(data.Id);
+                bool registeredBefore = _context.Participation.Any(x => (x.ParticipantGuid == userId) && x.EvenimentGuid == eventGUID);
                 if (registeredBefore == false)
                 {
-                    var participant = _context.Profile.FirstOrDefault(x => x.ProfileId == register.ParticipantGuid.ToString());
-                    var eveniment = _context.Event.FirstOrDefault(x => x.EvenimentId == register.EvenimentGuid);
-                    var accountParticipant = _context.Users.FirstOrDefault(x => x.Id == participant.UserId.ToString());
-
-                    register.Telefon = participant.Telefon;
-                    register.Email = accountParticipant.Email;
-                    register.ParticipantNume = participant.Nume + " " + participant.Prenume;
-                    register.DataInscriere = DateTime.Now;
-                    register.Status = "Inscris";
-                    register.Taxa = "Neachitata";
-                    register.ParticipareId = Guid.NewGuid();
-                    _context.Participation.Add(register);
-
-                    if (eveniment.TipEveniment == "Excursie")
+                    var profile = _context.Profile.FirstOrDefault(x => x.UserId == userId.ToString());
+                    if (profile != null)
                     {
-                        var tripRegister = new Participation();
-                        tripRegister.EvenimentGuid = eveniment.EvenimentId;
-                        tripRegister.ParticipantGuid = register.ParticipantGuid;
-                        tripRegister.Telefon = register.Telefon;
-                        tripRegister.Email = register.Email;
-                        tripRegister.ParticipantNume = register.ParticipantNume;
-                        tripRegister.DataInscriere = register.DataInscriere;
-                        tripRegister.Status = register.Status;
-                        tripRegister.Taxa = register.Taxa;
-                        tripRegister.ParticipareId = Guid.NewGuid();
+                        var eveniment = _context.Event.FirstOrDefault(x => x.EvenimentId == eventGUID);
+                        var userInfo = await _userManager.FindByIdAsync(userId.ToString());
+                        Participation register = new Participation();
 
-                        _context.Participation.Add(tripRegister);
-                    }else if(eveniment.TipEveniment == "Caz Social")
-                    {
-                        var socialRegister = new Participation();
-                        socialRegister.EvenimentGuid = eveniment.EvenimentId;
-                        socialRegister.ParticipantGuid = register.ParticipantGuid;
-                        socialRegister.Telefon = register.Telefon;
-                        socialRegister.Email = register.Email;
-                        socialRegister.ParticipantNume = register.ParticipantNume;
-                        socialRegister.DataInscriere = register.DataInscriere;
-                        socialRegister.Status = register.Status;
-                        socialRegister.Taxa = register.Taxa;
-                        socialRegister.ParticipareId = Guid.NewGuid();
+                        register.EvenimentGuid = eventGUID;
+                        register.ParticipantGuid = new Guid(profile.ProfileId);
+                        register.Telefon = profile.Telefon;
+                        register.Email = userInfo.Email;
+                        register.ParticipantNume = profile.Nume + " " + profile.Prenume;
+                        register.DataInscriere = DateTime.Now;
+                        register.Status = "Inscris";
+                        register.Taxa = "Neachitata";
+                        register.ParticipareId = Guid.NewGuid();
+                        register.EvenimentId = eveniment.ID;
+                        register.ParticipantId = profile.ID;
+
+                        if (eveniment.TipEveniment == "Excursie")
+                        {
+                          
+                        }
+                        else if (eveniment.TipEveniment == "Caz Social")
+                        {
+                           
+                        }
+                        else if (eveniment.TipEveniment == "Activitate")
+                        {
+                          
+                        }
+                        _context.Participation.Add(register);
                     }
-                    else if (eveniment.TipEveniment == "Activitate")
+                    else
                     {
-                        var activityRegister = new Participation();
-                        activityRegister.EvenimentGuid = eveniment.EvenimentId;
-                        activityRegister.ParticipantGuid = register.ParticipantGuid;
-                        activityRegister.Telefon = register.Telefon;
-                        activityRegister.Email = register.Email;
-                        activityRegister.ParticipantNume = register.ParticipantNume;
-                        activityRegister.DataInscriere = register.DataInscriere;
-                        activityRegister.Status = register.Status;
-                        activityRegister.Taxa = register.Taxa;
-                        activityRegister.ParticipareId = Guid.NewGuid();
+                        return BadRequest("Profilul nu se afla in baza de date");
                     }
                 }
                 else
@@ -382,6 +379,11 @@ namespace WebAPI_VDT.Controllers
             {
                 return BadRequest(new { controller = "UtileController", method = "GetPozeParticipanti", message = ex.Message });
             }
+        }
+
+        public class ParticipationRegisterPatter
+        {
+            public string Id { get; set; }
         }
 
     }
