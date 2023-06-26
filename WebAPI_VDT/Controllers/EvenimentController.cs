@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 using WebAPI_VDT.Context;
 using WebAPI_VDT.Models;
@@ -242,21 +244,54 @@ namespace WebAPI_VDT.Controllers
         }
 
         [HttpGet]
+        [Authorize]
+        [Route("PayTax/{id}")]
+        public async Task<IActionResult> PayTax(string id)
+        {
+            try
+            {
+                var participantionDB = _context.Participation.FirstOrDefault(x => x.ParticipareId == new Guid(id));
+                var result = participantionDB;
+                if (participantionDB == null)
+                {
+                    return NotFound();
+                }
+                result.Taxa = "Achitata";
+                _context.Entry(participantionDB).CurrentValues.SetValues(result);
+                await _context.SaveChangesAsync();
+
+                return Ok(string.Format("Taxa achitata pentru voluntarul: {0}",result.ParticipantNume));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "EvenimentController", method = "PayTax", message = ex.Message });
+            }
+        }
+
+        [HttpGet]
         [Route("GetParticipants/{id}")]
         public object GetParticipants(string id)
         {
             try
             {
-                var eveniment = _context.Participation.FirstOrDefault(x => x.EvenimentGuid == new Guid(id));
+                var eveniment = _context.Event.FirstOrDefault(x => x.EvenimentId == new Guid(id));
                 if (eveniment != null)
                 {
 
-                    var participants = _context.Participation.Select(row => row).ToList();
+                    var participants = _context.Participation.Where(a => a.EvenimentGuid == eveniment.EvenimentId)
+                                                             .Select(x => x)
+                                                             .ToList();
                     List<object> result = new List<object>();
 
                     foreach (Participation participant in participants)
                     {
-                        result.Add(new { Value = participant.ParticipantGuid, Nume = participant.ParticipantNume, Taxa = participant.Taxa, DataInscriere = participant.DataInscriere, Status = participant.Status, Telefon = participant.Telefon });
+                        result.Add(new 
+                        { Value = participant.ParticipantGuid, 
+                          Nume = participant.ParticipantNume, 
+                          Taxa = participant.Taxa, 
+                          DataInscriere = participant.DataInscriere, 
+                          Status = participant.Status, 
+                          Telefon = participant.Telefon });
                     }
                     return Ok(result);
                 }
@@ -384,6 +419,56 @@ namespace WebAPI_VDT.Controllers
         public class ParticipationRegisterPatter
         {
             public string Id { get; set; }
+        }
+
+        [HttpGet]
+        [Authorize]
+        [Route("GetParticipantsList/{eventId}")]
+        public IActionResult GetParticipantsList(string eventId)
+        {
+            try
+            {
+                Guid eventGuid = new Guid(eventId);
+                var participants = _context.Participation.Where(x => x.EvenimentGuid == eventGuid)
+                                                        .Select(a => a)
+                                                        .ToList();
+                using (var workbook = new XLWorkbook())
+                {
+                    var worksheet = workbook.Worksheets.Add("Participanti");
+                    var currentRow = 1;
+                    worksheet.Cell(currentRow, 1).Value = "Nume participant";
+                    worksheet.Cell(currentRow, 2).Value = "Taxa";
+                    worksheet.Cell(currentRow, 3).Value = "Data inscriere";
+                    worksheet.Cell(currentRow, 4).Value = "Status";
+                    worksheet.Cell(currentRow, 5).Value = "Telefon";
+                    worksheet.Cell(currentRow, 6).Value = "Email";
+                    foreach (var participare in participants)
+                    {
+                        currentRow++;
+                        worksheet.Cell(currentRow, 1).Value = participare.ParticipantNume;
+                        worksheet.Cell(currentRow, 2).Value = participare.Taxa;
+                        worksheet.Cell(currentRow, 3).Value = participare.DataInscriere;
+                        worksheet.Cell(currentRow, 4).Value = participare.Status;
+                        worksheet.Cell(currentRow, 5).Value = participare.Telefon;
+                        worksheet.Cell(currentRow, 6).Value = participare.Email;
+                    }
+
+                    using (var stream = new MemoryStream())
+                    {
+                        workbook.SaveAs(stream);
+                        var content = stream.ToArray();
+
+                        return File(
+                            content,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "Participanti.xlsx");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { controller = "EvenimentController", method = "GetParticipantsList", message = ex.Message });
+            }
         }
 
     }
